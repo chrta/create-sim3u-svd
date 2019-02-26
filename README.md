@@ -13,11 +13,16 @@ wget https://www.silabs.com/documents/public/data-sheets/SiM3U1xx-SiM3C1xx-RM.pd
 cd ..
 ~~~
 
+Install the pipenv environment:
+
+~~~
+pipenv install
+~~~
+
 To execute the tool:
 
 ~~~
-cd src
-./parse_sim3u.py
+pipenv run python src/parse_sim3u.py --input docs/SiM3U1xx-SiM3C1xx-RM.pdf --out out.svd
 ~~~
 
 This might take half an hour, so be patient...
