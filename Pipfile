@@ -1,0 +1,12 @@
+[[source]]
+url = 'https://pypi.python.org/simple'
+verify_ssl = true
+name = 'pypi'
+
+[requires]
+python_version = '3.6'
+
+[packages]
+PyPDF2 = "~=1.26"
+camelot-py = "~=0.7"
+opencv-python = "~=3.4"

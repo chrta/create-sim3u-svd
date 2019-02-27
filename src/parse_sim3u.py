@@ -15,6 +15,7 @@ from register import Register, RegisterBits, RegisterBitTableEntry, RegisterBitT
 from peripheral import Peripheral
 from rm_table import RmTable
 from pdf_doc import Document, Manual
+from svd import SvdGenerator
 
 logger = logging.getLogger(__name__)
 
@@ -69,7 +70,7 @@ def parse_peripheral_overview(pdf_filename, page_list):
 
         #remove peripheral name from register name
         name = name.replace(current_peripheral.name + '_', '')
-        reg = Register(name, title, int(addr ,0), has_set, has_clr, has_msk)
+        reg = Register(name, title, int(addr, 0), has_set, has_clr, has_msk)
         current_peripheral.add_register(reg)
         #peripherals[current_peripheral.name] = current_peripheral
     return peripherals
@@ -217,6 +218,7 @@ def parse_args():
 def main():
     args = parse_args()
     pdf_filename = args.input
+    svd_filename = args.out
 
     #setup the logger
     handler = logging.StreamHandler(sys.stdout)
@@ -224,7 +226,7 @@ def main():
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     handler.setFormatter(formatter)
     logger.addHandler(handler)
-    
+
     #get the chapters and pages from the pdf
     doc = Document(pdf_filename)
     logger.info("Parsing toc of document".format(pdf_filename))
@@ -234,10 +236,12 @@ def main():
 
     persistency = Persistency('data.pickle')
     peripherals = persistency.load()
+    
     if peripherals is None:
         logger.info("Parsing peripheral overview from document {}".format(pdf_filename))
         peripherals = parse_peripheral_overview(pdf_filename, manual.get_chapter_pages('3. SiM3U1xx/SiM3C1xx Register Memory Map'))
         logger.info("Done parsing peripheral overview")
+
     for p_n, p in peripherals.items():
         pages = manual.get_pages_for_registers(p.name)
         logger.info("Peripheral {} pg. {}".format(p.name, pages))
@@ -251,6 +255,10 @@ def main():
         #    print(r)
     logger.info("Done parsing registers for peripherals")
     persistency.save(peripherals)
+
+    svd = SvdGenerator(peripherals)
+    svd.generate(svd_filename)
+
     
 if __name__ == "__main__":
     # execute only if run as a script
