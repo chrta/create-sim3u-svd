@@ -41,9 +41,8 @@ The script executes the following steps:
 
 - parse register content details to create enum information
 - check validity of parsed information
-- create classes with pyxb for svd file creation
-- create the svd file
+- create the complete svd file
 
-# Links
+# Info
 
-http://pyxb.sourceforge.net
+This created svd file is intended to be used in the SiM3U port of zephyr that is currently in development: https://github.com/chrta/zephyr-sim3u
