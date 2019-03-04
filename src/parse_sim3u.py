@@ -19,6 +19,7 @@ from svd import SvdGenerator
 
 logger = logging.getLogger(__name__)
 
+
 def parse_peripheral_overview(pdf_filename, page_list):
     pages = "{}-{}".format(page_list[0], page_list[1])
     reg_overview_tables = camelot.read_pdf(pdf_filename, pages=pages)
@@ -35,7 +36,7 @@ def parse_peripheral_overview(pdf_filename, page_list):
         if 'Register Name' in content[0]:
             continue
         if ' Registers' in content[0]:
-            name = content[0].replace(' Registers','')
+            name = content[0].replace(' Registers', '')
             logger.debug("New Peripheral {}".format(name))
             current_peripheral = Peripheral(name)
             peripherals[name] = current_peripheral
@@ -49,7 +50,7 @@ def parse_peripheral_overview(pdf_filename, page_list):
         has_clr = False
         has_msk = False
         if '\n' in content[0]:
-            #parsing error of the table
+            # parsing error of the table
             name = content[0].splitlines()[0]
             title = content[0].splitlines()[1]
             addr = content[0].splitlines()[2]
@@ -60,7 +61,7 @@ def parse_peripheral_overview(pdf_filename, page_list):
             if len(content[0].splitlines()) > 5:
                 has_msk = 'Y' in content[0].splitlines()[5]
         else:
-            #normal case
+            # normal case
             name = content[0]
             title = content[1]
             addr = content[2]
@@ -68,15 +69,16 @@ def parse_peripheral_overview(pdf_filename, page_list):
             has_clr = 'Y' in content[4]
             has_msk = 'Y' in content[5]
 
-        #remove peripheral name from register name
+        # remove peripheral name from register name
         name = name.replace(current_peripheral.name + '_', '')
         reg = Register(name, title, int(addr, 0), has_set, has_clr, has_msk)
         current_peripheral.add_register(reg)
         #peripherals[current_peripheral.name] = current_peripheral
     return peripherals
 
+
 def determine_register(peripheral, df):
-    #tables[0] is the overview with reset values RW/R etc
+    # tables[0] is the overview with reset values RW/R etc
     logger.debug("Peripheral is {}".format(peripheral.name))
     for row in df.iterrows():
         logger.debug("New row")
@@ -104,7 +106,7 @@ def parse_reg_bit_description(register, df):
         raise Exception("Expected Function")
 
     p_bits = re.compile('(\d+)(:(\d+))?')
-    data = df.iloc[1:,:3]
+    data = df.iloc[1:, :3]
 
     for index, content in data.iterrows():
         m = p_bits.match(content[0])
@@ -116,9 +118,9 @@ def parse_reg_bit_description(register, df):
             register.add_bit_info(bits, content[1], content[2])
         logger.debug(content)
 
-    
+
 def parse_reg_bit_overview(peripheral, df):
-    #tables[0] is the overview with reset values RW/R etc
+    # tables[0] is the overview with reset values RW/R etc
     logger.debug("Peripheral is {}".format(peripheral.name))
     register = determine_register(peripheral, df)
     if not register:
@@ -143,8 +145,8 @@ def parse_reg_bit_overview(peripheral, df):
     if df[0][8] != 'Reset':
         raise Exception("Expected Reset")
 
-    df_bits_31_16 = df.iloc[:4,1:]
-    df_bits_15_0 = df.iloc[5:-1,1:].rename(lambda x: x - 5)
+    df_bits_31_16 = df.iloc[:4, 1:]
+    df_bits_15_0 = df.iloc[5:-1, 1:].rename(lambda x: x - 5)
 
     logger.debug(df_bits_31_16)
     logger.debug(df_bits_15_0)
@@ -162,10 +164,12 @@ def parse_reg_bit_overview(peripheral, df):
     logger.debug(bit_entries)
     return register
 
-def parse_peripheral_register(pdf_filename, peripheral, pages):
-    tables = camelot.read_pdf(pdf_filename, pages="{}-{}".format(pages[0], pages[1]))
 
-    #tables[0] is the overview with reset values RW/R etc
+def parse_peripheral_register(pdf_filename, peripheral, pages):
+    tables = camelot.read_pdf(
+        pdf_filename, pages="{}-{}".format(pages[0], pages[1]))
+
+    # tables[0] is the overview with reset values RW/R etc
 
     descriptions = []
     register = None
@@ -184,7 +188,8 @@ def parse_peripheral_register(pdf_filename, peripheral, pages):
     if descriptions and register:
         description_df = pandas.concat(descriptions, ignore_index=True)
         parse_reg_bit_description(register, description_df)
-    
+
+
 class Persistency:
     def __init__(self, filename):
         self.filename = filename
@@ -214,20 +219,22 @@ def parse_args():
                         help="Filename of the svd file to generate")
 
     return parser.parse_args()
- 
+
+
 def main():
     args = parse_args()
     pdf_filename = args.input
     svd_filename = args.out
 
-    #setup the logger
+    # setup the logger
     handler = logging.StreamHandler(sys.stdout)
     logger.setLevel(logging.INFO)
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    formatter = logging.Formatter(
+        '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     handler.setFormatter(formatter)
     logger.addHandler(handler)
 
-    #get the chapters and pages from the pdf
+    # get the chapters and pages from the pdf
     doc = Document(pdf_filename)
     logger.info("Parsing toc of document".format(pdf_filename))
     manual = doc.parse_toc()
@@ -236,10 +243,12 @@ def main():
 
     persistency = Persistency('data.pickle')
     peripherals = persistency.load()
-    
+
     if peripherals is None:
-        logger.info("Parsing peripheral overview from document {}".format(pdf_filename))
-        peripherals = parse_peripheral_overview(pdf_filename, manual.get_chapter_pages('3. SiM3U1xx/SiM3C1xx Register Memory Map'))
+        logger.info(
+            "Parsing peripheral overview from document {}".format(pdf_filename))
+        peripherals = parse_peripheral_overview(pdf_filename, manual.get_chapter_pages(
+            '3. SiM3U1xx/SiM3C1xx Register Memory Map'))
         logger.info("Done parsing peripheral overview")
 
     for p_n, p in peripherals.items():
@@ -249,8 +258,9 @@ def main():
             logger.info("Parsing registers for peripheral {}".format(p.name))
             parse_peripheral_register(pdf_filename, p, pages)
         else:
-            logger.warning("Peripheral {} register description not found".format(p.name))
-        #for n, r in p.registers.items():
+            logger.warning(
+                "Peripheral {} register description not found".format(p.name))
+        # for n, r in p.registers.items():
         #    print("\tRegister {}".format(n))
         #    print(r)
     logger.info("Done parsing registers for peripherals")
@@ -259,8 +269,7 @@ def main():
     svd = SvdGenerator(peripherals)
     svd.generate(svd_filename)
 
-    
+
 if __name__ == "__main__":
     # execute only if run as a script
     main()
-

@@ -1,5 +1,6 @@
 #!/bin/env python3
 
+
 class RmTable():
     def __init__(self, table):
         self.table = table

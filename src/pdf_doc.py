@@ -1,5 +1,6 @@
 import PyPDF2
 
+
 class Chapter:
     def __init__(self, name, page):
         self.name = name
@@ -16,7 +17,7 @@ class Chapter:
             self.chapter[-1].set_last_page(page_no)
         if len(self.page) >= 2:
             raise Exception("Already last page set")
-        if self.page[0] < page_no: 
+        if self.page[0] < page_no:
             self.page.append(page_no - 1)
         else:
             self.page.append(self.page[0])
@@ -46,6 +47,7 @@ class Chapter:
             result += " " + v.__str__()
         return result
 
+
 class Manual:
     def __init__(self):
         self.chapter = []
@@ -69,7 +71,7 @@ class Manual:
             if page:
                 return page
         return None
-                
+
     def __str__(self):
         result = "Manual:\n"
         for v in self.chapter:
@@ -77,10 +79,11 @@ class Manual:
         result += "\n"
         return result
 
+
 class Document:
     def __init__(self, filename):
         self.filename = filename
-        
+
     def _store_toc(self, pdf, outlines, parent, indent=""):
         chapter = parent
         for o in outlines:
@@ -92,7 +95,7 @@ class Document:
                 self._store_toc(pdf, o, chapter, indent + " ")
             else:
                 raise Exception("Unexpected content in toc")
-    
+
     def parse_toc(self):
         pdf = PyPDF2.PdfFileReader(open(self.filename, "rb"))
         print("{} has {} pages.".format(self.filename, pdf.getNumPages()))

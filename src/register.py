@@ -3,12 +3,14 @@
 import re
 import xml.etree.ElementTree as ET
 
+
 class RegisterBits:
     def __init__(self, offset, width, name):
         self.offset = offset
         self.width = width
         self.name = name
         self.function = ""
+
 
 class Register:
     def __init__(self, name, title, address, has_set=False, has_clr=False, has_msk=False):
@@ -35,15 +37,17 @@ class Register:
         ET.SubElement(r, 'name').text = self.name
         if self.description:
             ET.SubElement(r, 'description').text = self.description
-        ET.SubElement(r, 'addressOffset').text = hex(self.address - parent_address)
+        ET.SubElement(r, 'addressOffset').text = hex(
+            self.address - parent_address)
         ET.SubElement(r, 'resetValue').text = hex(self.reset_value)
         ET.SubElement(r, 'resetMask').text = hex(self.reset_mask)
         if self.bits:
             fields = ET.SubElement(r, 'fields')
             self.bits.xml_append(fields)
-        
+
     def __str__(self):
         return "Register {0}\t\t {1:#010X}\t{2} {3} {4}\n\t\t{5}\n".format(self.name, self.address, self.has_set, self.has_clr, self.has_msk, self.bits)
+
 
 class RegisterBitTableEntry:
     def __init__(self, column):
@@ -66,12 +70,12 @@ class RegisterBitTableEntry:
             self.access = self.column[2]
         if len(self.column[3]):
             # handle reset value X as 0
-            f = lambda x: 0 if x == 'X' else int(x)
+            def f(x): return 0 if x == 'X' else int(x)
             self.reset = [f(x) for x in self.column[3].split()]
         if '[' in self.name:
-            #remove the bit range from the name, e.g. DATA[31:16]
+            # remove the bit range from the name, e.g. DATA[31:16]
             self.name = self.name.split('[')[0]
-            
+
     def merge(self, entry):
         self.bits.extend(entry.bits)
         if len(entry.name) and (self.name != entry.name):
@@ -79,7 +83,8 @@ class RegisterBitTableEntry:
         if self.access and entry.access and (self.access != entry.access):
             print("")
             print(self)
-            raise Exception("Merging {} '{}' with sth that has a different access {} vs {}!!".format(self.name, self.bits, self.access, entry.access))
+            raise Exception("Merging {} '{}' with sth that has a different access {} vs {}!!".format(
+                self.name, self.bits, self.access, entry.access))
         if not self.access:
             self.access = entry.access
         self.reset.extend(entry.reset)
@@ -89,7 +94,7 @@ class RegisterBitTableEntry:
         keep_bits = self.bits[:len(self.reset)]
         to_entry.bits = self.bits[len(self.reset):]
         self.bits = keep_bits
-        
+
     def verify(self):
         if not self.bits:
             raise Exception("No bits are defined")
@@ -123,7 +128,7 @@ class RegisterBitTableEntry:
         p1 = re.compile('([0,1]+)(-([0,1]+))?:\s*(.*)')
         p2 = re.compile('\s*(.+)')
         print("\nParsing function for {}".format(self.name))
-        #print(self.function)
+        # print(self.function)
         for i, line in enumerate(self.function.splitlines()):
             print("Line {}: '{}'".format(i, line))
             if i == 0:
@@ -134,24 +139,25 @@ class RegisterBitTableEntry:
                 print("MATCH!!!")
                 print(m)
                 self.enum_values.append(("0b" + m.group(1), m.group(4)))
-                #TODO handle m.group(3) if it is there
+                # TODO handle m.group(3) if it is there
                 continue
             m = p2.match(line)
             if m and self.enum_values:
                 value, descr = self.enum_values[-1]
                 descr += m.group(1)
                 self.enum_values[-1] = (value, descr)
-        
+
     def xml_append(self, fields_element):
         if not hasattr(self, 'enum_values'):
             self.enum_values = []
         self._parse_function()
         f = ET.SubElement(fields_element, 'field')
         ET.SubElement(f, 'name').text = self.name
-        #if self.description:
+        # if self.description:
         #    ET.SubElement(f, 'description').text = self.description
         ET.SubElement(f, 'bitOffset').text = str(self.bits[-1])
-        ET.SubElement(f, 'bitWidth').text = str(self.bits[0] - self.bits[-1] + 1)
+        ET.SubElement(f, 'bitWidth').text = str(
+            self.bits[0] - self.bits[-1] + 1)
 
         if self.enum_values:
             evs = ET.SubElement(f, 'enumeratedValues')
@@ -160,7 +166,7 @@ class RegisterBitTableEntry:
                 ET.SubElement(ev, 'name').text = "???"
                 ET.SubElement(ev, 'description').text = descr
                 ET.SubElement(ev, 'value').text = value
-        
+
     def __str__(self):
         bits = ",".join(map(str, self.bits))
         reset = ",".join(map(str, self.reset))
@@ -173,6 +179,7 @@ class RegisterBitTableEntry:
 
     def __repr__(self):
         return self.__str__()
+
 
 class RegisterBitTableEntryCollection:
     def __init__(self):
@@ -201,7 +208,7 @@ class RegisterBitTableEntryCollection:
 
     def _distribute_bits(self):
         self.entries[-2].move_bits_to(self.entries[-1])
-    
+
     def append(self, entry):
         if not self.entries:
             self.entries.append(entry)
@@ -223,7 +230,7 @@ class RegisterBitTableEntryCollection:
                 raise
 
     def add_bit_info(self, bit_index, name, function):
-        #print(self)
+        # print(self)
         #print("Add bit info for {}".format(bit_index))
         #print("  Name {}".format(name))
         #print("  Function {}\n\n".format(function))
@@ -248,7 +255,7 @@ class RegisterBitTableEntryCollection:
             reset_value = reset_value | v
             reset_mask = reset_mask | m
         return (reset_value, reset_mask)
-        
+
     def xml_append(self, fields_element):
         for e in self.entries:
             e.xml_append(fields_element)

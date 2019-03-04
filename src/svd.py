@@ -4,12 +4,15 @@ import xml.etree.ElementTree as ET
 
 logger = logging.getLogger(__name__)
 
+
 def setup_logger():
     handler = logging.StreamHandler(sys.stdout)
     logger.setLevel(logging.INFO)
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    formatter = logging.Formatter(
+        '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     handler.setFormatter(formatter)
     logger.addHandler(handler)
+
 
 class SvdGenerator:
     def __init__(self, peripherals):
@@ -17,13 +20,14 @@ class SvdGenerator:
         self.peripherals = peripherals
 
     def generate(self, svd_filename):
-        #pyxb.RequireValidWhenGenerating(False)
+        # pyxb.RequireValidWhenGenerating(False)
         device = ET.Element('device', attrib={'schemaVersion': '1.1'})
         svd = ET.ElementTree(device)
 
         ET.SubElement(device, 'name').text = "SiM3U167_B"
         ET.SubElement(device, 'version').text = "1"
-        ET.SubElement(device, 'description').text = "USB, 256K Flash, 32K RAM, EMIF"
+        ET.SubElement(
+            device, 'description').text = "USB, 256K Flash, 32K RAM, EMIF"
 
         cpu = ET.SubElement(device, 'cpu')
         ET.SubElement(cpu, 'name').text = "CM3"
@@ -43,7 +47,7 @@ class SvdGenerator:
 
         for p_n, p in self.peripherals.items():
             p.xml_append(p_element)
-        #for p_n, p in self.peripherals.items():
+        # for p_n, p in self.peripherals.items():
         #    print("Peripheral: {}".format(p_n))
         #    print(p.get_xml())
 
