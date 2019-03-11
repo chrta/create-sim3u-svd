@@ -33,7 +33,7 @@ class Chapter:
         return None
 
     def get_pages_for_registers(self, peripheral_name):
-        if ' Registers' in self.name and peripheral_name in self.name:
+        if ' Registers' in self.name and " " + peripheral_name in self.name:
             return self.page
         for chapter in self.chapter:
             page = chapter.get_pages_for_registers(peripheral_name)
