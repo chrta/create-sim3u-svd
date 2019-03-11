@@ -51,4 +51,4 @@ class SvdGenerator:
         #    print("Peripheral: {}".format(p_n))
         #    print(p.get_xml())
 
-        svd.write(svd_filename, encoding="utf-8")
+        svd.write(svd_filename, encoding="utf-8", xml_declaration=True)

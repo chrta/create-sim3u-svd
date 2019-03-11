@@ -2,7 +2,9 @@
 
 import functools
 import xml.etree.ElementTree as ET
+import logging
 
+logger = logging.getLogger(__name__)
 
 class Peripheral:
     def __init__(self, name):
@@ -10,9 +12,16 @@ class Peripheral:
         self.description = "None"
         self.registers = dict()
         self.base_address = ""
+        self.interrupts = []
 
     def add_register(self, register):
         self.registers[register.name] = register
+
+    def add_interrupt(self, interrupt):
+        logger.info("Attaching Interrupt {} to peripheral {}".format(interrupt.name, self.name))
+        if not hasattr(self, 'interrupts'):
+            self.interrupts = []
+        self.interrupts.append(interrupt)
 
     def _calc_xml_values(self):
         addr = functools.reduce(lambda x, reg: min(
@@ -30,11 +39,15 @@ class Peripheral:
         ab = ET.SubElement(p, 'addressBlock')
         ET.SubElement(ab, 'offset').text = hex(0)
         ET.SubElement(ab, 'size').text = "0xffc"
-        ET.SubElement(ab, 'usage').text = "register"
+        ET.SubElement(ab, 'usage').text = "registers"
 
-        interrupt = ET.SubElement(p, 'interrupt')
-        ET.SubElement(interrupt, 'name').text = "???"
-        ET.SubElement(interrupt, 'value').text = "99"
+        if not hasattr(self, 'interrupts'):
+            self.interrupts = []
+
+        for i in self.interrupts:
+            interrupt = ET.SubElement(p, 'interrupt')
+            ET.SubElement(interrupt, 'name').text = i.name
+            ET.SubElement(interrupt, 'value').text = str(i.index)
 
         regs = ET.SubElement(p, 'registers')
         for r_n, r in self.registers.items():

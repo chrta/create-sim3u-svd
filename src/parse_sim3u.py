@@ -76,6 +76,78 @@ def parse_peripheral_overview(pdf_filename, page_list):
         #peripherals[current_peripheral.name] = current_peripheral
     return peripherals
 
+class Interrupt():
+    def __init__(self, content):
+        self.index = int(content[0])
+        self.name = content[2].replace(' ', '_')
+        self.description = content[3]
+        self.address = int(content[4], 0)
+    
+def parse_interrupts(pdf_filename, page_list):
+    pages = "{}-{}".format(page_list[0], page_list[1])
+    interrupts_tables = camelot.read_pdf(pdf_filename, pages=pages)
+
+    # flatten dfs
+    dfs = [x.df for x in interrupts_tables]
+    table = pandas.concat(dfs)
+
+    interrupts = []
+    for row in table.iterrows():
+        content = row[1]
+        if not content[0]:
+            #skipping entries without the position filled -> internal exceptions
+            continue
+        try:
+            int_index = int(content[0])
+        except:
+            #skipping non-numerical entries, this might be a table header
+            continue
+
+        logger.debug("New Interrupt {}".format(content[2]))
+        interrupts.append(Interrupt(content))
+        
+    return interrupts
+
+map_int_to_periph = {'PBEXT0': 'PBCFG0',
+                     'PBEXT1': 'PBCFG0',
+                     'PMATCH0': 'PBCFG0',
+                     'VDDLOW': 'VMON0',
+                     'VREGLOW': 'VMON0',
+                     'VBUS_Invalid': 'VMON0'
+}
+
+map_int_prefix_to_periph = {'DMA': 'DMACTRL0',
+                            'TIMER0' : 'TIMER0',
+                            'TIMER1' : 'TIMER1',
+                            'I2S0' : 'I2S0',
+                            'RTC0': 'RTC0',
+}
+def attach_interrupts_to_peripherals(peripherals, interrupts):
+    for i in interrupts:
+        logger.debug("Processing Interrupt {}".format(i.name))
+        if i.name in peripherals:
+            peripherals[i.name].add_interrupt(i)
+            continue
+
+        found = False
+        for prefix, periph in map_int_prefix_to_periph.items():
+            if i.name.startswith(prefix):
+                peripherals[periph].add_interrupt(i)
+                found = True
+                break
+        if found:
+            continue
+                
+        try:
+            peripheral_name = map_int_to_periph[i.name]
+            peripherals[peripheral_name].add_interrupt(i)
+            continue
+        except:
+            logger.error("No periph found for Interrupt {}".format(i.name))
+            raise
+
+        
+
 
 def determine_register(peripheral, df):
     # tables[0] is the overview with reset values RW/R etc
@@ -250,6 +322,14 @@ def main():
         peripherals = parse_peripheral_overview(pdf_filename, manual.get_chapter_pages(
             '3. SiM3U1xx/SiM3C1xx Register Memory Map'))
         logger.info("Done parsing peripheral overview")
+
+    
+    logger.info("Parsing interrupts from document {}".format(pdf_filename))
+    pages = manual.get_chapter_pages('4.2. Interrupt Vector Table')
+    interrupts = parse_interrupts(pdf_filename, pages)
+
+    attach_interrupts_to_peripherals(peripherals, interrupts)
+
 
     for p_n, p in peripherals.items():
         pages = manual.get_pages_for_registers(p.name)
