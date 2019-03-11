@@ -2,7 +2,9 @@
 
 import re
 import xml.etree.ElementTree as ET
+import logging
 
+logger = logging.getLogger(__name__)
 
 class RegisterBits:
     def __init__(self, offset, width, name):
@@ -49,6 +51,23 @@ class Register:
         return "Register {0}\t\t {1:#010X}\t{2} {3} {4}\n\t\t{5}\n".format(self.name, self.address, self.has_set, self.has_clr, self.has_msk, self.bits)
 
 
+class EnumValue:
+    def __init__(self, value, description):
+        self.description = description
+        self.value = value
+        self.name = ""
+
+    def try_name_value(self):
+        if self.value == "0b0" and "isable" in self.description:
+            self.name = "Disable"
+            return
+        if self.value == "0b1" and "nable" in self.description:
+            self.name = "Enable"
+            return
+        self.name = self.value[2:]
+        logger.info("Cannot name value {} descr {}".format(self.value, self.description))
+       
+    
 class RegisterBitTableEntry:
     def __init__(self, column):
         self.column = column
@@ -130,27 +149,30 @@ class RegisterBitTableEntry:
         print("\nParsing function for {}".format(self.name))
         # print(self.function)
         for i, line in enumerate(self.function.splitlines()):
-            print("Line {}: '{}'".format(i, line))
+            #print("Line {}: '{}'".format(i, line))
             if i == 0:
                 self.description = line.strip()
                 continue
             m = p1.match(line)
             if m:
-                print("MATCH!!!")
-                print(m)
-                self.enum_values.append(("0b" + m.group(1), m.group(4)))
+                self.enum_values.append(EnumValue("0b" + m.group(1), m.group(4)))
                 # TODO handle m.group(3) if it is there
                 continue
             m = p2.match(line)
             if m and self.enum_values:
-                value, descr = self.enum_values[-1]
-                descr += m.group(1)
-                self.enum_values[-1] = (value, descr)
+                enum_value = self.enum_values[-1]
+                enum_value.description += m.group(1)
 
+    def _name_enum_values(self):
+        if self.enum_values:
+            for enum_value in self.enum_values:
+                enum_value.try_name_value()
+    
     def xml_append(self, fields_element):
         if not hasattr(self, 'enum_values'):
             self.enum_values = []
         self._parse_function()
+        self._name_enum_values()
         f = ET.SubElement(fields_element, 'field')
         ET.SubElement(f, 'name').text = self.name
         # if self.description:
@@ -161,11 +183,12 @@ class RegisterBitTableEntry:
 
         if self.enum_values:
             evs = ET.SubElement(f, 'enumeratedValues')
-            for value, descr in self.enum_values:
+            for enum_value in self.enum_values:
                 ev = ET.SubElement(evs, 'enumeratedValue')
-                ET.SubElement(ev, 'name').text = "???"
-                ET.SubElement(ev, 'description').text = descr
-                ET.SubElement(ev, 'value').text = value
+                if enum_value.name:
+                    ET.SubElement(ev, 'name').text = enum_value.name
+                ET.SubElement(ev, 'description').text = enum_value.description
+                ET.SubElement(ev, 'value').text = enum_value.value
 
     def __str__(self):
         bits = ",".join(map(str, self.bits))
