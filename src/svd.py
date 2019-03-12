@@ -45,8 +45,14 @@ class SvdGenerator:
 
         p_element = ET.SubElement(device, 'peripherals')
 
+        serialized = set()
         for p_n, p in self.peripherals.items():
-            p.xml_append(p_element)
+            if p.derived_from and (p.derived_from not in serialized):
+                self.peripherals[p.derived_from].xml_append(p_element)
+                serialized.add(p.derived_from)
+            if p.name not in serialized:
+                p.xml_append(p_element)
+                serialized.add(p.name)
         # for p_n, p in self.peripherals.items():
         #    print("Peripheral: {}".format(p_n))
         #    print(p.get_xml())

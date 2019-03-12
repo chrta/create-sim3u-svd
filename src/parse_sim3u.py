@@ -146,7 +146,25 @@ def attach_interrupts_to_peripherals(peripherals, interrupts):
             logger.error("No periph found for Interrupt {}".format(i.name))
             raise
 
-        
+map_derived_periph = {'PBSTD0': 'PBSTD2',
+                      'PBSTD1': 'PBSTD2',
+                      'PBSTD3': 'PBSTD2',
+                      'UART1': 'UART0',
+                      'USART1': 'USART0',
+                      'TIMER1': 'TIMER0',
+                      'SARADC1': 'SARADC0',
+                      'SPI1': 'SPI0',
+                      'SPI2': 'SPI0',
+                      'I2C1': 'I2C0',
+                      'PCA1': 'PCA0',
+                      'CMP1': 'CMP0',
+                      'IDAC1': 'IDAC0',
+
+}
+def populate_derived_from_info(peripherals):
+    for p_n, p in peripherals.items():
+        if p.name in map_derived_periph:
+            p.derived_from = map_derived_periph[p.name]
 
 
 def determine_register(peripheral, df):
@@ -330,7 +348,8 @@ def main():
 
     attach_interrupts_to_peripherals(peripherals, interrupts)
 
-
+    populate_derived_from_info(peripherals)
+   
     for p_n, p in peripherals.items():
         pages = manual.get_pages_for_registers(p.name)
         logger.info("Peripheral {} pg. {}".format(p.name, pages))

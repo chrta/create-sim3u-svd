@@ -2,6 +2,7 @@
 
 import functools
 import xml.etree.ElementTree as ET
+import string
 import logging
 
 logger = logging.getLogger(__name__)
@@ -9,10 +10,12 @@ logger = logging.getLogger(__name__)
 class Peripheral:
     def __init__(self, name):
         self.name = name
+        self.header_struct_name = name.rstrip(string.digits)
         self.description = "None"
         self.registers = dict()
         self.base_address = ""
         self.interrupts = []
+        self.derived_from = None
 
     def add_register(self, register):
         self.registers[register.name] = register
@@ -28,10 +31,27 @@ class Peripheral:
             x, reg.address), self.registers.values(), 0xFFFFFFFF)
         self.base_address = addr
 
+    def _xml_append_interrupts(self, p):
+        if not hasattr(self, 'interrupts'):
+            self.interrupts = []
+
+        for i in self.interrupts:
+            interrupt = ET.SubElement(p, 'interrupt')
+            ET.SubElement(interrupt, 'name').text = i.name
+            ET.SubElement(interrupt, 'value').text = str(i.index)
+
     def xml_append(self, peripherals_element):
         self._calc_xml_values()
+        if self.derived_from:
+            p = ET.SubElement(peripherals_element, 'peripheral', derivedFrom=self.derived_from)
+            ET.SubElement(p, 'name').text = self.name
+            ET.SubElement(p, 'baseAddress').text = hex(self.base_address)
+            self._xml_append_interrupts(p)
+            return
+        
         p = ET.SubElement(peripherals_element, 'peripheral')
         ET.SubElement(p, 'name').text = self.name
+        ET.SubElement(p, 'headerStructName').text = self.header_struct_name
         ET.SubElement(p, 'baseAddress').text = hex(self.base_address)
         ET.SubElement(
             p, 'description').text = self.description if self.description else "None"
@@ -41,14 +61,8 @@ class Peripheral:
         ET.SubElement(ab, 'size').text = "0xffc"
         ET.SubElement(ab, 'usage').text = "registers"
 
-        if not hasattr(self, 'interrupts'):
-            self.interrupts = []
-
-        for i in self.interrupts:
-            interrupt = ET.SubElement(p, 'interrupt')
-            ET.SubElement(interrupt, 'name').text = i.name
-            ET.SubElement(interrupt, 'value').text = str(i.index)
-
+        self._xml_append_interrupts(p)
+        
         regs = ET.SubElement(p, 'registers')
         for r_n, r in self.registers.items():
             r.xml_append(regs, self.base_address)
