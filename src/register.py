@@ -77,7 +77,8 @@ class RegisterBitTableEntry:
         self.reset = []
         self.function = ""
         self.description = ""
-        self.enum_values = []
+        self.enum_values = {'read': [], 'write': [], 'read-write': []}
+        self.usage = None #defaults to read-write when none given
         self._parse_column()
 
     def _parse_column(self):
@@ -148,31 +149,41 @@ class RegisterBitTableEntry:
         p2 = re.compile('\s*(.+)')
         print("\nParsing function for {}".format(self.name))
         # print(self.function)
+        rw_mode = 'read-write'
         for i, line in enumerate(self.function.splitlines()):
             #print("Line {}: '{}'".format(i, line))
             if i == 0:
                 self.description = line.strip()
                 continue
+            if line.strip() == 'Read:':
+                rw_mode = 'read'
+                continue
+            if line.strip() == 'Write:':
+                rw_mode = 'write'
+                continue
             m = p1.match(line)
             if m:
-                self.enum_values.append(EnumValue("0b" + m.group(1), m.group(4)))
+                self.enum_values[rw_mode].append(EnumValue("0b" + m.group(1), m.group(4)))
                 # TODO handle m.group(3) if it is there
                 continue
             m = p2.match(line)
-            if m and self.enum_values:
-                enum_value = self.enum_values[-1]
+            if m and self.enum_values[rw_mode]:
+                enum_value = self.enum_values[rw_mode][-1]
                 enum_value.description += m.group(1)
 
     def _name_enum_values(self):
-        if self.enum_values:
-            for enum_value in self.enum_values:
+        for key, enum_values in self.enum_values.items():
+            for enum_value in enum_values:
                 enum_value.try_name_value()
     
     def xml_append(self, fields_element):
-        if not hasattr(self, 'enum_values'):
-            self.enum_values = []
         self._parse_function()
         self._name_enum_values()
+        if self.name == 'Reserved':
+            # To remove WARNING M361 from SVDConv:
+            # Field name 'Reserved': 'RESERVED' items must not be defined.
+            return
+        
         f = ET.SubElement(fields_element, 'field')
         ET.SubElement(f, 'name').text = self.name
         # if self.description:
@@ -181,9 +192,12 @@ class RegisterBitTableEntry:
         ET.SubElement(f, 'bitWidth').text = str(
             self.bits[0] - self.bits[-1] + 1)
 
-        if self.enum_values:
+        for mode, enum_values in self.enum_values.items():
+            if not enum_values:
+                continue
             evs = ET.SubElement(f, 'enumeratedValues')
-            for enum_value in self.enum_values:
+            ET.SubElement(evs, 'usage').text = mode
+            for enum_value in enum_values:
                 ev = ET.SubElement(evs, 'enumeratedValue')
                 if enum_value.name:
                     ET.SubElement(ev, 'name').text = enum_value.name
