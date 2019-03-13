@@ -57,15 +57,19 @@ class EnumValue:
         self.value = value
         self.name = ""
 
-    def try_name_value(self):
+    def try_name_value(self, access):
         if self.value == "0b0" and "isable" in self.description:
             self.name = "Disable"
-            return
-        if self.value == "0b1" and "nable" in self.description:
+        elif self.value == "0b1" and "nable" in self.description:
             self.name = "Enable"
-            return
-        self.name = self.value[2:]
-        logger.info("Cannot name value {} descr {}".format(self.value, self.description))
+        else:
+            self.name = self.value[2:]
+            logger.info("Cannot name value {} descr {}".format(self.value, self.description))
+        if access == 'read':
+            self.name += "_R"
+        elif access == 'write':
+            self.name += "_W"
+
        
     
 class RegisterBitTableEntry:
@@ -174,7 +178,7 @@ class RegisterBitTableEntry:
     def _name_enum_values(self):
         for key, enum_values in self.enum_values.items():
             for enum_value in enum_values:
-                enum_value.try_name_value()
+                enum_value.try_name_value(key)
     
     def xml_append(self, fields_element):
         self._parse_function()
