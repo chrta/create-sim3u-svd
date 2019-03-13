@@ -205,7 +205,7 @@ class RegisterBitTableEntry:
                 ev = ET.SubElement(evs, 'enumeratedValue')
                 if enum_value.name:
                     ET.SubElement(ev, 'name').text = enum_value.name
-                ET.SubElement(ev, 'description').text = enum_value.description
+                ET.SubElement(ev, 'description').text = enum_value.description.replace('\uf06d', 'u')
                 ET.SubElement(ev, 'value').text = enum_value.value
 
     def __str__(self):

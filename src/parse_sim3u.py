@@ -342,28 +342,31 @@ def main():
         logger.info("Done parsing peripheral overview")
 
     
-    logger.info("Parsing interrupts from document {}".format(pdf_filename))
-    pages = manual.get_chapter_pages('4.2. Interrupt Vector Table')
-    interrupts = parse_interrupts(pdf_filename, pages)
+        logger.info("Parsing interrupts from document {}".format(pdf_filename))
+        pages = manual.get_chapter_pages('4.2. Interrupt Vector Table')
+        interrupts = parse_interrupts(pdf_filename, pages)
 
-    attach_interrupts_to_peripherals(peripherals, interrupts)
+        attach_interrupts_to_peripherals(peripherals, interrupts)
 
-    populate_derived_from_info(peripherals)
+        populate_derived_from_info(peripherals)
    
-    for p_n, p in peripherals.items():
-        pages = manual.get_pages_for_registers(p.name)
-        logger.info("Peripheral {} pg. {}".format(p.name, pages))
-        if pages:
-            logger.info("Parsing registers for peripheral {}".format(p.name))
-            parse_peripheral_register(pdf_filename, p, pages)
-        else:
-            logger.warning(
-                "Peripheral {} register description not found".format(p.name))
-        # for n, r in p.registers.items():
-        #    print("\tRegister {}".format(n))
-        #    print(r)
-    logger.info("Done parsing registers for peripherals")
-    persistency.save(peripherals)
+        for p_n, p in peripherals.items():
+            if p.derived_from:
+                # skip peripherals that are derived from others
+                continue
+            pages = manual.get_pages_for_registers(p.name)
+            logger.info("Peripheral {} pg. {}".format(p.name, pages))
+            if pages:
+                logger.info("Parsing registers for peripheral {}".format(p.name))
+                parse_peripheral_register(pdf_filename, p, pages)
+            else:
+                logger.warning(
+                    "Peripheral {} register description not found".format(p.name))
+                # for n, r in p.registers.items():
+                #    print("\tRegister {}".format(n))
+                #    print(r)
+        logger.info("Done parsing registers for peripherals")
+        persistency.save(peripherals)
 
     svd = SvdGenerator(peripherals)
     svd.generate(svd_filename)

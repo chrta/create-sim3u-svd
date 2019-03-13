@@ -13,7 +13,8 @@ class Peripheral:
         self.header_struct_name = name.rstrip(string.digits)
         self.description = "None"
         self.registers = dict()
-        self.base_address = ""
+        self.base_address = 0
+        self.block_size = 0
         self.interrupts = []
         self.derived_from = None
 
@@ -27,9 +28,12 @@ class Peripheral:
         self.interrupts.append(interrupt)
 
     def _calc_xml_values(self):
-        addr = functools.reduce(lambda x, reg: min(
+        min_addr = functools.reduce(lambda x, reg: min(
             x, reg.address), self.registers.values(), 0xFFFFFFFF)
-        self.base_address = addr
+        max_addr = functools.reduce(lambda x, reg: max(
+            x, reg.address), self.registers.values(), min_addr)
+        self.base_address = min_addr
+        self.block_size = max_addr - min_addr + 4
 
     def _xml_append_interrupts(self, p):
         if not hasattr(self, 'interrupts'):
@@ -58,7 +62,7 @@ class Peripheral:
 
         ab = ET.SubElement(p, 'addressBlock')
         ET.SubElement(ab, 'offset').text = hex(0)
-        ET.SubElement(ab, 'size').text = "0xffc"
+        ET.SubElement(ab, 'size').text = hex(self.block_size)
         ET.SubElement(ab, 'usage').text = "registers"
 
         self._xml_append_interrupts(p)
