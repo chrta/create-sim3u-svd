@@ -19,6 +19,7 @@ class Peripheral:
         self.derived_from = None
 
     def add_register(self, register):
+        register.peripheral = self
         self.registers[register.name] = register
 
     def add_interrupt(self, interrupt):

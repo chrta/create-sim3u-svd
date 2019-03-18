@@ -27,6 +27,9 @@ class Register:
         self.reset_value = None
         self.reset_mask = None
         self.read_action = None
+        self.is_cluster = False
+        self.header_struct_name = None
+        self.peripheral = None
 
     def set_bits(self, bits):
         self.bits = bits
@@ -52,22 +55,56 @@ class Register:
         ET.SubElement(r, 'addressOffset').text = hex(
             self.address - parent_address + offset)
         ET.SubElement(r, 'dataType').text = 'uint32_t'
-            
+
+    def _xml_append_to_cluster(self, parent_element, name, description, data_type):
+        r = ET.SubElement(parent_element, 'register')
+        ET.SubElement(r, 'name').text = name
+        if description:
+            ET.SubElement(r, 'description').text = description
+        if self.read_action:
+            ET.SubElement(r, 'readAction').text = self.read_action
+
+        ET.SubElement(r, 'addressOffset').text = hex(0)
+        ET.SubElement(r, 'dataType').text = data_type
+        
     def xml_append(self, registers_element, parent_address):
         self.reset_value, self.reset_mask = self.bits.calc_reset_values() if self.bits else (0, 0)
-        r = ET.SubElement(registers_element, 'register')
+
+        if self.bits and self.bits.has_only_one_32bit_field():
+            #get description
+            if not self.description:
+                self.description = self.bits.get_description_of_entry(0)
+            function_desc = self.bits.get_function_of_entry(0)
+            #clear self.bits
+            self.bits.clear()
+            
+            if 'should always access' in function_desc:
+                self.is_cluster = True
+                self.header_struct_name = self.peripheral.header_struct_name + '_' + self.name
+        
+        r = ET.SubElement(registers_element, 'cluster' if self.is_cluster else 'register')
         ET.SubElement(r, 'name').text = self.name
         if self.description:
             ET.SubElement(r, 'description').text = self.description
+
+        if self.header_struct_name:
+            ET.SubElement(r, 'headerStructName').text = self.header_struct_name
+            
         ET.SubElement(r, 'addressOffset').text = hex(
             self.address - parent_address)
         ET.SubElement(r, 'resetValue').text = hex(self.reset_value)
         ET.SubElement(r, 'resetMask').text = hex(self.reset_mask)
-        if self.read_action:
+        if not self.is_cluster and self.read_action:
             ET.SubElement(r, 'readAction').text = self.read_action
+
         if self.bits:
             fields = ET.SubElement(r, 'fields')
             self.bits.xml_append(fields)
+
+        if self.is_cluster:
+            self._xml_append_to_cluster(r, 'U32', None, 'uint32_t')
+            self._xml_append_to_cluster(r, 'U16', None, 'uint16_t')
+            self._xml_append_to_cluster(r, 'U8',  None, 'uint8_t')
 
         if self.has_set:
             self._xml_append_special(registers_element, parent_address, 'SET', 4)
@@ -157,6 +194,13 @@ class RegisterBitTableEntry:
             raise Exception("No access specified")
         if not self.name:
             raise Exception("No name given")
+
+    def is_32_bit_entry(self):
+        if len(self.bits) != 32:
+            return False
+
+        # TODO: Add more checks here?
+        return True
 
     def is_entry(self, bits, name):
         if not set(self.bits) <= set(bits):
@@ -326,6 +370,23 @@ class RegisterBitTableEntryCollection:
             reset_mask = reset_mask | m
         return (reset_value, reset_mask)
 
+    def has_only_one_32bit_field(self):
+        if len(self.entries) != 1:
+            return False
+        return self.entries[0].is_32_bit_entry()
+
+    def get_description_of_entry(self, index):
+        return self.entries[index].description
+
+    def get_function_of_entry(self, index):
+        return self.entries[index].function
+
+    def clear(self):
+        self.entries = []
+
+    def __len__(self):
+        return len(self.entries)
+    
     def xml_append(self, fields_element):
         for e in self.entries:
             e.xml_append(fields_element)
