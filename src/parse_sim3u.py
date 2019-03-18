@@ -206,6 +206,9 @@ def parse_reg_bit_description(register, df):
             bits = list(range(start_bit_index, end_bit_index - 1, -1))
             logger.debug("Bits from {}".format(bits))
             register.add_bit_info(bits, content[1], content[2])
+        else:
+            if 'Reads of this register modify the state of hardware' in content[0]:
+                register.set_read_action('modifyExternal')
         logger.debug(content)
 
 

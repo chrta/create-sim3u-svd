@@ -31,7 +31,7 @@ class Peripheral:
         min_addr = functools.reduce(lambda x, reg: min(
             x, reg.address), self.registers.values(), 0xFFFFFFFF)
         max_addr = functools.reduce(lambda x, reg: max(
-            x, reg.address), self.registers.values(), min_addr)
+            x, reg.max_address()), self.registers.values(), min_addr)
         self.base_address = min_addr
         self.block_size = max_addr - min_addr + 4
 

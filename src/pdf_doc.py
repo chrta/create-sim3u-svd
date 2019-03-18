@@ -72,6 +72,13 @@ class Manual:
                 return page
         return None
 
+    def get_description_for_register(self, peripheral_name, register_name):
+        for chapter in self.chapter:
+            desc = chapter.get_description_for_register(peripheral_name, register_name)
+            if desc:
+                return desc
+        return None
+
     def __str__(self):
         result = "Manual:\n"
         for v in self.chapter:

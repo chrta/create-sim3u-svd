@@ -26,6 +26,7 @@ class Register:
         self.bits = None
         self.reset_value = None
         self.reset_mask = None
+        self.read_action = None
 
     def set_bits(self, bits):
         self.bits = bits
@@ -33,6 +34,25 @@ class Register:
     def add_bit_info(self, bit_index, name, function):
         self.bits.add_bit_info(bit_index, name, function)
 
+    def set_read_action(self, read_action):
+        self.read_action = read_action
+
+    def max_address(self):
+        if self.has_msk:
+            return self.address + 0xC
+        if self.has_clr:
+            return self.address + 8
+        if self.has_set:
+            return self.address + 4
+        return self.address
+
+    def _xml_append_special(self, parent_element, parent_address, postfix, offset):
+        r = ET.SubElement(parent_element, 'register')
+        ET.SubElement(r, 'name').text = self.name + '_' + postfix
+        ET.SubElement(r, 'addressOffset').text = hex(
+            self.address - parent_address + offset)
+        ET.SubElement(r, 'dataType').text = 'uint32_t'
+            
     def xml_append(self, registers_element, parent_address):
         self.reset_value, self.reset_mask = self.bits.calc_reset_values() if self.bits else (0, 0)
         r = ET.SubElement(registers_element, 'register')
@@ -43,9 +63,18 @@ class Register:
             self.address - parent_address)
         ET.SubElement(r, 'resetValue').text = hex(self.reset_value)
         ET.SubElement(r, 'resetMask').text = hex(self.reset_mask)
+        if self.read_action:
+            ET.SubElement(r, 'readAction').text = self.read_action
         if self.bits:
             fields = ET.SubElement(r, 'fields')
             self.bits.xml_append(fields)
+
+        if self.has_set:
+            self._xml_append_special(registers_element, parent_address, 'SET', 4)
+        if self.has_clr:
+            self._xml_append_special(registers_element, parent_address, 'CLR', 8)
+        if self.has_msk:
+            self._xml_append_special(registers_element, parent_address, 'MSK', 0xC)
 
     def __str__(self):
         return "Register {0}\t\t {1:#010X}\t{2} {3} {4}\n\t\t{5}\n".format(self.name, self.address, self.has_set, self.has_clr, self.has_msk, self.bits)
