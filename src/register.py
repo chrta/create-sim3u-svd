@@ -56,7 +56,7 @@ class Register:
             self.address - parent_address + offset)
         ET.SubElement(r, 'dataType').text = 'uint32_t'
 
-    def _xml_append_to_cluster(self, parent_element, name, description, data_type):
+    def _xml_append_to_cluster(self, parent_element, name, description, data_type, alternate_register = None):
         r = ET.SubElement(parent_element, 'register')
         ET.SubElement(r, 'name').text = name
         if description:
@@ -64,6 +64,9 @@ class Register:
         if self.read_action:
             ET.SubElement(r, 'readAction').text = self.read_action
 
+        if alternate_register:
+            ET.SubElement(r, 'alternateRegister').text = alternate_register
+        
         ET.SubElement(r, 'addressOffset').text = hex(0)
         ET.SubElement(r, 'dataType').text = data_type
         
@@ -103,8 +106,8 @@ class Register:
 
         if self.is_cluster:
             self._xml_append_to_cluster(r, 'U32', None, 'uint32_t')
-            self._xml_append_to_cluster(r, 'U16', None, 'uint16_t')
-            self._xml_append_to_cluster(r, 'U8',  None, 'uint8_t')
+            self._xml_append_to_cluster(r, 'U16', None, 'uint16_t', 'U32')
+            self._xml_append_to_cluster(r, 'U8',  None, 'uint8_t', 'U32')
 
         if self.has_set:
             self._xml_append_special(registers_element, parent_address, 'SET', 4)
