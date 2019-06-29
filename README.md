@@ -19,7 +19,7 @@ pipenv install
 To execute the tool:
 
 ~~~
-pipenv run python src/parse_sim3u.py --input docs/SiM3U1xx-SiM3C1xx-RM.pdf --out out.svd
+pipenv run python src/parse_sim3u.py --input doc/SiM3U1xx-SiM3C1xx-RM.pdf --out out.svd
 ~~~
 
 This might take half an hour, so be patient...
