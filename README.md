@@ -7,10 +7,7 @@ This is currently work in progress and in a early stage.
 First the sim3u reference manual must be downloaded into the doc folder:
 
 ~~~
-mkdir doc
-cd doc
-wget https://www.silabs.com/documents/public/data-sheets/SiM3U1xx-SiM3C1xx-RM.pdf
-cd ..
+wget -P doc/ https://www.silabs.com/documents/public/data-sheets/SiM3U1xx-SiM3C1xx-RM.pdf
 ~~~
 
 Install the pipenv environment:
