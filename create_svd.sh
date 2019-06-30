@@ -2,7 +2,7 @@
 
 set -e
 
-DOCS_FOLDER="./docs"
+DOCS_FOLDER="./doc"
 RM_FILENAME="$DOCS_FOLDER/SiM3U1xx-SiM3C1xx-RM.pdf"
 RM_LINK=https://www.silabs.com/documents/public/data-sheets/SiM3U1xx-SiM3C1xx-RM.pdf
 SVD_TMP_OUT="$(mktemp)"
