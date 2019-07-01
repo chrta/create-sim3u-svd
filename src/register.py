@@ -225,8 +225,8 @@ class RegisterBitTableEntry:
         return (reset_value, reset_mask)
 
     def _parse_function(self):
-        p1 = re.compile('([0,1]+)(-([0,1]+))?:\s*(.*)')
-        p2 = re.compile('\s*(.+)')
+        p1 = re.compile(r'([0,1]+)(-([0,1]+))?:\s*(.*)')
+        p2 = re.compile(r'\s*(.+)')
         print("\nParsing function for {}".format(self.name))
         # print(self.function)
         rw_mode = 'read-write'

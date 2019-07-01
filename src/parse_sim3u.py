@@ -175,7 +175,7 @@ def determine_register(peripheral, df):
         for c in content:
             if peripheral.name + '_' in c:
                 logger.debug("Found register name!!!")
-                p = re.compile('([a-zA-Z0-9]+)_(\w+)\s*=\s*0x.*')
+                p = re.compile(r'([a-zA-Z0-9]+)_(\w+)\s*=\s*0x.*')
                 for line in c.splitlines():
                     if line.startswith(peripheral.name + '_'):
                         m = p.match(line)
@@ -194,7 +194,7 @@ def parse_reg_bit_description(register, df):
     if df[2][0] != 'Function':
         raise Exception("Expected Function")
 
-    p_bits = re.compile('(\d+)(:(\d+))?')
+    p_bits = re.compile(r'(\d+)(:(\d+))?')
     data = df.iloc[1:, :3]
 
     for index, content in data.iterrows():
