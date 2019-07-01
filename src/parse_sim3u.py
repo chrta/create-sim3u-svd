@@ -7,7 +7,6 @@ import camelot
 import pandas
 import pickle
 import re
-import os
 import sys
 import argparse
 import logging
