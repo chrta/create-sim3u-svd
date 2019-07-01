@@ -72,16 +72,18 @@ def parse_peripheral_overview(pdf_filename, page_list):
         name = name.replace(current_peripheral.name + '_', '')
         reg = Register(name, title, int(addr.replace('_', ''), 0), has_set, has_clr, has_msk)
         current_peripheral.add_register(reg)
-        #peripherals[current_peripheral.name] = current_peripheral
+        # peripherals[current_peripheral.name] = current_peripheral
     return peripherals
 
-class Interrupt():
+
+class Interrupt:
     def __init__(self, content):
         self.index = int(content[0])
         self.name = content[2].replace(' ', '_')
         self.description = content[3]
         self.address = int(content[4], 0)
-    
+
+
 def parse_interrupts(pdf_filename, page_list):
     pages = "{}-{}".format(page_list[0], page_list[1])
     interrupts_tables = camelot.read_pdf(pdf_filename, pages=pages)
@@ -94,18 +96,19 @@ def parse_interrupts(pdf_filename, page_list):
     for row in table.iterrows():
         content = row[1]
         if not content[0]:
-            #skipping entries without the position filled -> internal exceptions
+            # skipping entries without the position filled -> internal exceptions
             continue
         try:
             int_index = int(content[0])
         except:
-            #skipping non-numerical entries, this might be a table header
+            # skipping non-numerical entries, this might be a table header
             continue
 
         logger.debug("New Interrupt {}".format(content[2]))
         interrupts.append(Interrupt(content))
-        
+
     return interrupts
+
 
 map_int_to_periph = {'PBEXT0': 'PBCFG0',
                      'PBEXT1': 'PBCFG0',
@@ -113,14 +116,16 @@ map_int_to_periph = {'PBEXT0': 'PBCFG0',
                      'VDDLOW': 'VMON0',
                      'VREGLOW': 'VMON0',
                      'VBUS_Invalid': 'VMON0'
-}
+                     }
 
 map_int_prefix_to_periph = {'DMA': 'DMACTRL0',
-                            'TIMER0' : 'TIMER0',
-                            'TIMER1' : 'TIMER1',
-                            'I2S0' : 'I2S0',
+                            'TIMER0': 'TIMER0',
+                            'TIMER1': 'TIMER1',
+                            'I2S0': 'I2S0',
                             'RTC0': 'RTC0',
-}
+                            }
+
+
 def attach_interrupts_to_peripherals(peripherals, interrupts):
     for i in interrupts:
         logger.debug("Processing Interrupt {}".format(i.name))
@@ -136,7 +141,7 @@ def attach_interrupts_to_peripherals(peripherals, interrupts):
                 break
         if found:
             continue
-                
+
         try:
             peripheral_name = map_int_to_periph[i.name]
             peripherals[peripheral_name].add_interrupt(i)
@@ -144,6 +149,7 @@ def attach_interrupts_to_peripherals(peripherals, interrupts):
         except:
             logger.error("No periph found for Interrupt {}".format(i.name))
             raise
+
 
 map_derived_periph = {'PBSTD0': 'PBSTD2',
                       'PBSTD1': 'PBSTD2',
@@ -158,8 +164,9 @@ map_derived_periph = {'PBSTD0': 'PBSTD2',
                       'PCA1': 'PCA0',
                       'CMP1': 'CMP0',
                       'IDAC1': 'IDAC0',
+                      }
 
-}
+
 def populate_derived_from_info(peripherals):
     for p_n, p in peripherals.items():
         if p.name in map_derived_periph:
@@ -292,7 +299,6 @@ class Persistency:
                 return pickle.load(f)
         except IOError:
             return None
-        return None
 
     def save(self, data):
         with open(self.filename, 'wb') as f:
@@ -343,7 +349,6 @@ def main():
             '3. SiM3U1xx/SiM3C1xx Register Memory Map'))
         logger.info("Done parsing peripheral overview")
 
-    
         logger.info("Parsing interrupts from document {}".format(pdf_filename))
         pages = manual.get_chapter_pages('4.2. Interrupt Vector Table')
         interrupts = parse_interrupts(pdf_filename, pages)
@@ -351,7 +356,7 @@ def main():
         attach_interrupts_to_peripherals(peripherals, interrupts)
 
         populate_derived_from_info(peripherals)
-   
+
         for p_n, p in peripherals.items():
             if p.derived_from:
                 # skip peripherals that are derived from others

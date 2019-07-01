@@ -21,7 +21,7 @@ class Chapter:
             self.page.append(page_no - 1)
         else:
             self.page.append(self.page[0])
-        #print("Set last page of {} to {} (page {})".format(self.name, page_no, self.page))
+        # print("Set last page of {} to {} (page {})".format(self.name, page_no, self.page))
 
     def get_chapter_pages(self, chapter_name):
         if self.name == chapter_name:
@@ -95,7 +95,7 @@ class Document:
         chapter = parent
         for o in outlines:
             if isinstance(o, PyPDF2.generic.Destination):
-                #print("{}Destination {} pg. {}".format(indent, o.title, pdf.getDestinationPageNumber(o)))
+                # print("{}Destination {} pg. {}".format(indent, o.title, pdf.getDestinationPageNumber(o)))
                 chapter = Chapter(o.title, pdf.getDestinationPageNumber(o) + 1)
                 parent.add_chapter(chapter)
             elif isinstance(o, list):

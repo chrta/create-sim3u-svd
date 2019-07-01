@@ -6,6 +6,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 class RegisterBits:
     def __init__(self, offset, width, name):
         self.offset = offset
@@ -56,7 +57,7 @@ class Register:
             self.address - parent_address + offset)
         ET.SubElement(r, 'dataType').text = 'uint32_t'
 
-    def _xml_append_to_cluster(self, parent_element, name, description, data_type, alternate_register = None):
+    def _xml_append_to_cluster(self, parent_element, name, description, data_type, alternate_register=None):
         r = ET.SubElement(parent_element, 'register')
         ET.SubElement(r, 'name').text = name
         if description:
@@ -66,25 +67,25 @@ class Register:
 
         if alternate_register:
             ET.SubElement(r, 'alternateRegister').text = alternate_register
-        
+
         ET.SubElement(r, 'addressOffset').text = hex(0)
         ET.SubElement(r, 'dataType').text = data_type
-        
+
     def xml_append(self, registers_element, parent_address):
         self.reset_value, self.reset_mask = self.bits.calc_reset_values() if self.bits else (0, 0)
 
         if self.bits and self.bits.has_only_one_32bit_field():
-            #get description
+            # get description
             if not self.description:
                 self.description = self.bits.get_description_of_entry(0)
             function_desc = self.bits.get_function_of_entry(0)
-            #clear self.bits
+            # clear self.bits
             self.bits.clear()
-            
+
             if 'should always access' in function_desc:
                 self.is_cluster = True
                 self.header_struct_name = self.peripheral.header_struct_name + '_' + self.name
-        
+
         r = ET.SubElement(registers_element, 'cluster' if self.is_cluster else 'register')
         ET.SubElement(r, 'name').text = self.name
         if self.description:
@@ -92,7 +93,7 @@ class Register:
 
         if self.header_struct_name:
             ET.SubElement(r, 'headerStructName').text = self.header_struct_name
-            
+
         ET.SubElement(r, 'addressOffset').text = hex(
             self.address - parent_address)
         ET.SubElement(r, 'resetValue').text = hex(self.reset_value)
@@ -107,7 +108,7 @@ class Register:
         if self.is_cluster:
             self._xml_append_to_cluster(r, 'U32', None, 'uint32_t')
             self._xml_append_to_cluster(r, 'U16', None, 'uint16_t', 'U32')
-            self._xml_append_to_cluster(r, 'U8',  None, 'uint8_t', 'U32')
+            self._xml_append_to_cluster(r, 'U8', None, 'uint8_t', 'U32')
 
         if self.has_set:
             self._xml_append_special(registers_element, parent_address, 'SET', 4)
@@ -117,7 +118,8 @@ class Register:
             self._xml_append_special(registers_element, parent_address, 'MSK', 0xC)
 
     def __str__(self):
-        return "Register {0}\t\t {1:#010X}\t{2} {3} {4}\n\t\t{5}\n".format(self.name, self.address, self.has_set, self.has_clr, self.has_msk, self.bits)
+        return "Register {0}\t\t {1:#010X}\t{2} {3} {4}\n\t\t{5}\n".format(self.name, self.address, self.has_set,
+                                                                           self.has_clr, self.has_msk, self.bits)
 
 
 class EnumValue:
@@ -139,8 +141,7 @@ class EnumValue:
         elif access == 'write':
             self.name += "_W"
 
-       
-    
+
 class RegisterBitTableEntry:
     def __init__(self, column):
         self.column = column
@@ -151,7 +152,7 @@ class RegisterBitTableEntry:
         self.function = ""
         self.description = ""
         self.enum_values = {'read': [], 'write': [], 'read-write': []}
-        self.usage = None #defaults to read-write when none given
+        self.usage = None  # defaults to read-write when none given
         self._parse_column()
 
     def _parse_column(self):
@@ -164,6 +165,7 @@ class RegisterBitTableEntry:
         if len(self.column[3]):
             # handle reset value X as 0
             def f(x): return 0 if x == 'X' else int(x)
+
             self.reset = [f(x) for x in self.column[3].split()]
         if '[' in self.name:
             # remove the bit range from the name, e.g. DATA[31:16]
@@ -231,7 +233,7 @@ class RegisterBitTableEntry:
         # print(self.function)
         rw_mode = 'read-write'
         for i, line in enumerate(self.function.splitlines()):
-            #print("Line {}: '{}'".format(i, line))
+            # print("Line {}: '{}'".format(i, line))
             if i == 0:
                 self.description = line.strip()
                 continue
@@ -255,7 +257,7 @@ class RegisterBitTableEntry:
         for key, enum_values in self.enum_values.items():
             for enum_value in enum_values:
                 enum_value.try_name_value(key)
-    
+
     def xml_append(self, fields_element):
         self._parse_function()
         self._name_enum_values()
@@ -263,7 +265,7 @@ class RegisterBitTableEntry:
             # To remove WARNING M361 from SVDConv:
             # Field name 'Reserved': 'RESERVED' items must not be defined.
             return
-        
+
         f = ET.SubElement(fields_element, 'field')
         ET.SubElement(f, 'name').text = self.name
         # if self.description:
@@ -348,9 +350,9 @@ class RegisterBitTableEntryCollection:
 
     def add_bit_info(self, bit_index, name, function):
         # print(self)
-        #print("Add bit info for {}".format(bit_index))
-        #print("  Name {}".format(name))
-        #print("  Function {}\n\n".format(function))
+        # print("Add bit info for {}".format(bit_index))
+        # print("  Name {}".format(name))
+        # print("  Function {}\n\n".format(function))
         found = False
         for e in self.entries:
             if e.is_entry(bit_index, name):
@@ -389,7 +391,7 @@ class RegisterBitTableEntryCollection:
 
     def __len__(self):
         return len(self.entries)
-    
+
     def xml_append(self, fields_element):
         for e in self.entries:
             e.xml_append(fields_element)

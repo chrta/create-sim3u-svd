@@ -7,6 +7,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 class Peripheral:
     def __init__(self, name):
         self.name = name
@@ -53,7 +54,7 @@ class Peripheral:
             ET.SubElement(p, 'baseAddress').text = hex(self.base_address)
             self._xml_append_interrupts(p)
             return
-        
+
         p = ET.SubElement(peripherals_element, 'peripheral')
         ET.SubElement(p, 'name').text = self.name
         ET.SubElement(p, 'headerStructName').text = self.header_struct_name
@@ -67,7 +68,7 @@ class Peripheral:
         ET.SubElement(ab, 'usage').text = "registers"
 
         self._xml_append_interrupts(p)
-        
+
         regs = ET.SubElement(p, 'registers')
         for r_n, r in self.registers.items():
             r.xml_append(regs, self.base_address)
