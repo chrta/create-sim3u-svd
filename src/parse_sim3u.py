@@ -63,14 +63,14 @@ def parse_peripheral_overview(pdf_filename, page_list):
             # normal case
             name = content[0]
             title = content[1]
-            addr = content[2]
+            addr = content[2].replace('_', '')
             has_set = 'Y' in content[3]
             has_clr = 'Y' in content[4]
             has_msk = 'Y' in content[5]
 
         # remove peripheral name from register name
         name = name.replace(current_peripheral.name + '_', '')
-        reg = Register(name, title, int(addr, 0), has_set, has_clr, has_msk)
+        reg = Register(name, title, int(addr.replace('_', ''), 0), has_set, has_clr, has_msk)
         current_peripheral.add_register(reg)
         #peripherals[current_peripheral.name] = current_peripheral
     return peripherals
