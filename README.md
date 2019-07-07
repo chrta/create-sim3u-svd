@@ -42,4 +42,4 @@ The script executes the following steps:
 
 # Info
 
-This created svd file is intended to be used in the SiM3U port of zephyr that is currently in development: https://github.com/chrta/zephyr-sim3u
+This created svd file is intended to be used in the SiM3U port of Zephyr that is currently in development: https://github.com/chrta/zephyr-sim3u
