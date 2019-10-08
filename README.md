@@ -4,6 +4,9 @@ Generates an SVD file for the Silicon Labs SiM3U1x7 from the reference manual.
 
 This is currently work in progress and in a early stage.
 
+## Detailed steps
+
+
 First the sim3u reference manual must be downloaded into the doc folder:
 
 ~~~
@@ -22,6 +25,14 @@ To execute the tool:
 pipenv run python src/parse_sim3u.py --input doc/SiM3U1xx-SiM3C1xx-RM.pdf --out out.svd
 ~~~
 
+## Use helper script
+
+Or instead of all of the above, execute:
+
+~~~
+./create_svd.sh
+~~~
+
 This might take half an hour, so be patient...
 
 ## Flow
@@ -34,11 +45,13 @@ The script executes the following steps:
   - this contains the registers and the description of the bits inside the registers
   - these information is attached to the corresponding peripheral
 
-## Currently missing
+## Current status
 
-- parse register content details to create enum information
-- check validity of parsed information
-- create the complete svd file
+- svd file is created
+- generation of header file from created svd works
+- gpio and uart drivers based on the created svd are working
+- Most enumeration value names are suboptimal
+- most parts are untested
 
 # Info
 
